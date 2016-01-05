@@ -248,6 +248,7 @@ void usage(char *progname)
 	printf("\t--text <text>\t\tPrint 1-4 lines of text.\n");
 	printf("\t\t\t\tIf the text contains spaces, use quotation marks\n\t\t\t\taround it.\n");
 	printf("\t--cutmark\t\tPrint a mark where the tape should be cut\n");
+	printf("\t--fontsize\t\tManually set fontsize\n");
 	exit(1);
 }
 
