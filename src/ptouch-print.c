@@ -141,7 +141,7 @@ int get_baselineoffset(char *text, char *font, int fsz)
 {
 	int brect[8];
 
-	if (strpbrk(text, "QgjpqyQ") == NULL) {	/* if we have none of these */
+	if (strpbrk(text, "QgjpqyQµ") == NULL) {	/* if we have none of these */
 		return 0;		/* we don't need an baseline offset */
 	}				/* else we need to calculate it */
 	gdImageStringFT(NULL, &brect[0], -1, font, fsz, 0.0, 0, 0, "o");
@@ -153,6 +153,7 @@ int get_baselineoffset(char *text, char *font, int fsz)
 /* --------------------------------------------------------------------
 	Find out which fontsize we need for a given font to get a
 	specified pixel size
+	NOTE: This does NOT work for some UTF-8 chars like µ
    -------------------------------------------------------------------- */
 int find_fontsize(int want_px, char *font, char *text)
 {
