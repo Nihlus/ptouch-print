@@ -17,6 +17,8 @@
 	Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define _POSIX_C_SOURCE	199309L	/* needed for nanosleep() when using -std=c11 */
+
 #include <stdio.h>
 #include <stdlib.h>	/* malloc() */
 #include <string.h>	/* memcmp()  */
