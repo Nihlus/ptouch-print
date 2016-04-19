@@ -1,17 +1,17 @@
 /*
 	libptouch - functions to help accessing a brother ptouch
-	
+
 	Copyright (C) 2013 Dominic Radermacher <dominic.radermacher@gmail.com>
-	
+
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
 	published by the Free Software Foundation
-	
+
 	This program is distributed in the hope that it will be useful, but
 	WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 	See the GNU General Public License for more details.
-	
+
 	You should have received a copy of the GNU General Public License
 	along with this program; if not, write to the Free Software Foundation,
 	Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -32,7 +32,8 @@
 
 #define _(s) gettext(s)
 
-struct _pt_tape_info tape_info[5]= {
+struct _pt_tape_info tape_info[6]= {
+	{6, 32},	/* 6mm tape is 32px wide? works for me ;-) */
 	{9, 52},	/* 9mm tape is 52px wide? works for me ;-) */
 	{12,76},	/* and 76px work for me on a 12mm tape - maybe its only 64px */
 	{18,120},
@@ -56,7 +57,7 @@ int ptouch_open(ptouch_dev *ptdev)
 	struct libusb_device_descriptor desc;
 	ssize_t cnt;
 	int r,i=0;
-	
+
 	if ((*ptdev=malloc(sizeof(struct _ptouch_dev))) == NULL) {
 		fprintf(stderr, _("out of memory\n"));
 		return -1;
@@ -115,7 +116,7 @@ int ptouch_close(ptouch_dev ptdev)
 int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len)
 {
 	int r,tx;
-	
+
 	if (ptdev == NULL) {
 		return -1;
 	}
