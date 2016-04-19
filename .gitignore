@@ -13,3 +13,24 @@ Makefile.in
 /config.h.in
 /config.rpath
 /config.sub
+
+# C-Objects
+*.o
+
+# special directories
+/po
+/m4
+src/.deps/
+src/.dirstamp
+
+# Log files
+*.log
+
+# Documents
+ABOUT-NLS
+AUTHORS
+INSTALL
+
+# Binaries
+ptouch-gtk
+ptouch-print
