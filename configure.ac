@@ -34,7 +34,6 @@ AM_GNU_GETTEXT_VERSION(0.19)
 # Checks for libraries.
 AC_CHECK_LIB([gd], [gdImageStringFT])
 AC_CHECK_LIB([usb-1.0], [libusb_init])
-AC_CHECK_LIB([gtk-3], [gtk_init])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h libintl.h stdint.h stdlib.h string.h])
