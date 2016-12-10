@@ -25,6 +25,8 @@ struct _pt_tape_info {
 	uint8_t px;		/* Printing area in px */
 };
 
+#define FLAG_NONE		0
+#define FLAG_UNSUP_RASTER	1
 struct _pt_dev_info {
 	int vid;		/* USB vendor ID */
 	int pid;		/* USB product ID */

@@ -59,11 +59,21 @@ void rasterline_setpixel(uint8_t rasterline[16], int pixel)
 	return;
 }
 
+void unsupported_printer(ptouch_dev ptdev)
+{
+	printf(_("your printer unfortunately is not supported by this tool\n"));
+	printf(_("the rasterdata a transferred in some other (unknown) format\n"));
+	exit(1);
+}
+
 int print_img(ptouch_dev ptdev, gdImage *im)
 {
 	int d,i,k,offset,tape_width;
 	uint8_t rasterline[16];
 
+	if ((ptdev->devinfo->flags & FLAG_UNSUP_RASTER) == FLAG_UNSUP_RASTER) {
+		unsupported_printer(ptdev);
+	}
 	tape_width=ptouch_getmaxwidth(ptdev);
 	/* find out whether color 0 or color 1 is darker */
 	d=(gdImageRed(im,1)+gdImageGreen(im,1)+gdImageBlue(im,1) < gdImageRed(im,0)+gdImageGreen(im,0)+gdImageBlue(im,0))?1:0;

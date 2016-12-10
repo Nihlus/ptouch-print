@@ -42,8 +42,13 @@ struct _pt_tape_info tape_info[6]= {
 };
 
 struct _pt_dev_info ptdevs[] = {
-	{0x04f9, 0x202d, "PT-2430PC", 128, 0},	/* 180dpi, maximum 128px */
-	{0x04f9, 0x202c, "PT-1230PC", 76, 0},	/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
+	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},	/* 180dpi, maximum 128px */
+	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},	/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
+	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
+	{0x04f9, 0x2073, "PT-D450VP", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
+	/* Notes about the PT-D450VP: Tape detecting works, but printing does
+	   not. The tape is just blank. I assume, the printer does not understand
+	   the sent rasterdata. I'm also unsure about how many dots width we have */
 	{0,0,"",0,0}
 };
 
@@ -59,6 +64,10 @@ int ptouch_open(ptouch_dev *ptdev)
 	int r,i=0;
 
 	if ((*ptdev=malloc(sizeof(struct _ptouch_dev))) == NULL) {
+		fprintf(stderr, _("out of memory\n"));
+		return -1;
+	}
+	if (((*ptdev)->devinfo=malloc(sizeof(struct _pt_dev_info))) == NULL) {
 		fprintf(stderr, _("out of memory\n"));
 		return -1;
 	}
@@ -97,6 +106,8 @@ int ptouch_open(ptouch_dev *ptdev)
 					return -1;
 				}
 				(*ptdev)->h=handle;
+				(*ptdev)->devinfo->max_px=ptdevs[k].max_px;
+				(*ptdev)->devinfo->flags=ptdevs[k].flags;
 				return 0;
 			}
 		}
@@ -272,6 +283,8 @@ int ptouch_getstatus(ptouch_dev ptdev)
 
 int ptouch_getmaxwidth(ptouch_dev ptdev)
 {
+	/* TODO: should also check what the device supports. but I assume,
+	   you can't use a large tape in a printe that doesn't support it anyways */
 	return ptdev->tape_width_px;
 }
 
