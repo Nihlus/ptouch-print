@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([ptouch], [1.3.2], [dominic.radermacher@gmail.com])
+AC_INIT([ptouch], [1.3.3], [dominic.radermacher@gmail.com])
 AC_CONFIG_SRCDIR([src/libptouch.c])
 AC_CONFIG_HEADERS([config.h])
 
