@@ -19,6 +19,9 @@ Makefile.in
 
 # special directories
 /po
+!/po/POTFILES.in
+!/po/LINGUAS
+!/po/Makevars
 /m4
 src/.deps/
 src/.dirstamp
