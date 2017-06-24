@@ -1,7 +1,7 @@
 /*
 	ptouch-print - Print labels with images or text on a Brother P-Touch
 	
-	Copyright (C) 2015 Dominic Radermacher <dominic.radermacher@gmail.com>
+	Copyright (C) 2015-2017 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
 
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
