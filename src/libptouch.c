@@ -43,6 +43,7 @@ struct _pt_tape_info tape_info[6]= {
 
 struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},	/* 180dpi, maximum 128px */
+	{0x04f9, 0x2031, "PT-2430PC", 128, FLAG_SWITCH_WRONG},  /* */
 	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},	/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
 	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
 	{0x04f9, 0x2073, "PT-D450VP", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
