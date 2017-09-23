@@ -27,6 +27,8 @@ struct _pt_tape_info {
 
 #define FLAG_NONE		0
 #define FLAG_UNSUP_RASTER	1
+#define FLAG_FORCE_TIFF		2
+
 struct _pt_dev_info {
 	int vid;		/* USB vendor ID */
 	int pid;		/* USB product ID */
