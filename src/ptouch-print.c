@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 		}
 	}
-	if (ptouch_eject(ptdev) != 0) {
+	if (!save_png && ptouch_eject(ptdev) != 0) {
 		printf(_("ptouch_eject() failed\n"));
 		return -1;
 	}
