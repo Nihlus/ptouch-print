@@ -32,19 +32,21 @@
 
 #define _(s) gettext(s)
 
-struct _pt_tape_info tape_info[6]= {
-	{6, 32},	/* 6mm tape is 32px wide? works for me ;-) */
-	{9, 52},	/* 9mm tape is 52px wide? works for me ;-) */
-	{12,76},	/* and 76px work for me on a 12mm tape - maybe its only 64px */
-	{18,120},
-	{24,128},
-	{0,0}		/* terminating entry */
+/* Print area width in 180 DPI pixels */
+struct _pt_tape_info tape_info[]= {
+	{ 6, 32},	/* 6 mm tape */
+	{ 9, 53},	/* 9 mm tape */
+	{12, 75},	/* 12 mm tape */
+	{18, 117},	/* 18 mm tape */
+	{24, 128},	/* 24 mm tape */
+	{36, 192},	/* 36 mm tape */
+	{ 0, 0}		/* terminating entry */
 };
 
 struct _pt_dev_info ptdevs[] = {
-	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},	/* 180dpi, maximum 128px */
-	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_NONE},	/* maximum tape width 24mm, unknown how much pixels, untested so far */
-	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},	/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
+	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px */
+	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_FORCE_TIFF},	/* 180dpi, 128px, maximum tape width 24mm, must send TIFF compressed pixel data */
+	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},		/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
 	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
 	{0x04f9, 0x2073, "PT-D450VP", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
 	/* Notes about the PT-D450VP: Tape detecting works, but printing does
@@ -151,7 +153,7 @@ int ptouch_init(ptouch_dev ptdev)
 
 int ptouch_rasterstart(ptouch_dev ptdev)
 {
-	char cmd[]="\x1b\x69\x52\x01";	/* 1B 69 52 01 = RASTER DATA */
+	char cmd[] = "\x1b\x69\x52\x01";	/* 1B 69 52 01 = Select graphics transfer mode = Raster */
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
@@ -284,21 +286,31 @@ int ptouch_getstatus(ptouch_dev ptdev)
 
 int ptouch_getmaxwidth(ptouch_dev ptdev)
 {
-	/* TODO: should also check what the device supports. but I assume,
-	   you can't use a large tape in a printe that doesn't support it anyways */
 	return ptdev->tape_width_px;
 }
 
 int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, int len)
 {
-	uint8_t buf[32];
+	uint8_t buf[70];
+	int rc;
 
-	if (len > 16) {		/* PT-2430PC can not print more than 128 px */
-		return -1;	/* as we support more devices, we need to check */
-	}			/* how much pixels each device support */
+	if (len > ptdev->devinfo->max_px / 8) {
+		return -1;
+	}
+
 	buf[0]=0x47;
-	buf[1]=len;
-	buf[2]=0;
-	memcpy(buf+3, data, len);
-	return ptouch_send(ptdev, buf, len+3);
+	if (ptdev->devinfo->flags & FLAG_FORCE_TIFF) {
+	        /* Fake compression by encoding a single uncompressed run */
+	        buf[1] = len + 1;
+	        buf[2] = 0;
+	        buf[3] = len - 1;
+	        memcpy(buf + 4, data, len);
+	        rc = ptouch_send(ptdev, buf, len + 4);
+	} else {
+		buf[1] = len;
+		buf[2] = 0;
+		memcpy(buf + 3, data, len);
+		rc = ptouch_send(ptdev, buf, len + 3);
+	}
+	return rc;
 }
