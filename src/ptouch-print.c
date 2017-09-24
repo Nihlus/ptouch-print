@@ -319,7 +319,7 @@ int parse_args(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-	int i, lines, tape_width;
+	int i, lines = 0, tape_width;
 	char *line[MAX_LINES];
 	gdImage *im=NULL;
 	ptouch_dev ptdev=NULL;
@@ -369,10 +369,6 @@ int main(int argc, char *argv[])
 			exit(0);
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
 			im=image_load(argv[++i]);
-			if (im != NULL) {
-				print_img(ptdev, im);
-				gdImageDestroy(im);
-			}
 		} else if (strcmp(&argv[i][1], "-text") == 0) {
 			for (lines=0; (lines < MAX_LINES) && (i < argc); lines++) {
 				if ((i+1 >= argc) || (argv[i+1][0] == '-')) {
@@ -381,26 +377,30 @@ int main(int argc, char *argv[])
 				i++;
 				line[lines]=argv[i];
 			}
-			if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
-				printf(_("could not render text\n"));
-				return 1;
-			}
-			if (save_png != NULL) {
-				write_png(im, save_png);
-			} else {
-				print_img(ptdev, im);
-			}
-			gdImageDestroy(im);
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			ptouch_cutmark(ptdev);
 		} else {
 			usage(argv[0]);
 		}
 	}
-	if (ptouch_eject(ptdev) != 0) {
-		printf(_("ptouch_eject() failed\n"));
-		return -1;
+
+	if (lines) {
+		if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
+			printf(_("could not render text\n"));
+			return 1;
+		}
 	}
+		
+	if (save_png) {
+		write_png(im, save_png);
+	} else {
+		print_img(ptdev, im);
+		if (ptouch_eject(ptdev) != 0) {
+			printf(_("ptouch_eject() failed\n"));
+			return -1;
+		}
+	}
+	gdImageDestroy(im);
 	ptouch_close(ptdev);
 	libusb_exit(NULL);
 	return 0;
