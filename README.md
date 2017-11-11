@@ -13,3 +13,15 @@ for further models, too).
 
 Further info can be found at:
 https://mockmoon-cybernetics.ch/computer/p-touch2430pc/
+
+# Compile instructions
+
+autoreconf -i
+./configure --prefix=/usr
+make
+
+# Note
+
+Dear visitor, currently I have absolutely no time for improvements on this
+project (my free time currently is about one or two hours PER MONTH).
+Therefore, I can not look at suggestions about improvements.
