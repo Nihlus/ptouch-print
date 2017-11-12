@@ -52,6 +52,9 @@ struct _pt_dev_info ptdevs[] = {
 	/* Notes about the PT-D450VP: Tape detecting works, but printing does
 	   not. The tape is just blank. I assume, the printer does not understand
 	   the sent rasterdata. I'm also unsure about how many dots width we have */
+	{0x04f9, 0x2041, "PT-2730PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px, max tape width 24mm - reported to work with some quirks */
+	/* Notes about the PT-2730PC: was reported to need 48px whitespace
+	   within png-images before content is actually printed - can not check this */
 	{0,0,"",0,0}
 };
 
