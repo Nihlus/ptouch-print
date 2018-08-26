@@ -20,7 +20,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([ptouch], [m4_esyscmd_s([git describe --tags])], [blip@mockmoon-cybernetics.ch])
+AC_INIT([ptouch], [m4_esyscmd_s([build-aux/git-version-gen])], [blip@mockmoon-cybernetics.ch])
 AC_CONFIG_SRCDIR([src/libptouch.c])
 AC_CONFIG_HEADERS([config.h])
 
