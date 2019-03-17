@@ -1,7 +1,7 @@
 /*
 	ptouch-print - Print labels with images or text on a Brother P-Touch
 	
-	Copyright (C) 2015-2017 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
+	Copyright (C) 2015-2019 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
 
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
@@ -71,6 +71,10 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 	int d,i,k,offset,tape_width;
 	uint8_t rasterline[16];
 
+	if (!im) {
+		printf(_("nothing to print\n"));
+		return -1;
+	}
 	if ((ptdev->devinfo->flags & FLAG_UNSUP_RASTER) == FLAG_UNSUP_RASTER) {
 		unsupported_printer(ptdev);
 	}
@@ -83,6 +87,10 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		return -1;
 	}
 	offset=64-(gdImageSY(im)/2);	/* always print centered  */
+	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
+		printf("enable PackBits mode\n");
+	        ptouch_enable_packbits(ptdev);
+	}
 	if (ptouch_rasterstart(ptdev) != 0) {
 		printf(_("ptouch_rasterstart() failed\n"));
 		return -1;
@@ -95,7 +103,7 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 			}
 		}
 		if (ptouch_sendraster(ptdev, rasterline, 16) != 0) {
-			printf(_("ptouch_send() failed\n"));
+			printf(_("ptouch_sendraster() failed\n"));
 			return -1;
 		}
 	}
@@ -319,7 +327,7 @@ int parse_args(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-	int i, lines, tape_width;
+	int i, lines = 0, tape_width;
 	char *line[MAX_LINES];
 	gdImage *im=NULL;
 	ptouch_dev ptdev=NULL;
@@ -366,13 +374,14 @@ int main(int argc, char *argv[])
 			}
 		} else if (strcmp(&argv[i][1], "-info") == 0) {
 			printf(_("maximum printing width for this tape is %ipx\n"), tape_width);
+			printf("media type = %02x\n", ptdev->status->media_type);
+			printf("media width = %d mm\n", ptdev->status->media_width);
+			printf("tape color = %02x\n", ptdev->status->tape_color);
+			printf("text color = %02x\n", ptdev->status->text_color);
+			printf("error = %04x\n", ptdev->status->error);
 			exit(0);
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
 			im=image_load(argv[++i]);
-			if (im != NULL) {
-				print_img(ptdev, im);
-				gdImageDestroy(im);
-			}
 		} else if (strcmp(&argv[i][1], "-text") == 0) {
 			for (lines=0; (lines < MAX_LINES) && (i < argc); lines++) {
 				if ((i+1 >= argc) || (argv[i+1][0] == '-')) {
@@ -381,25 +390,31 @@ int main(int argc, char *argv[])
 				i++;
 				line[lines]=argv[i];
 			}
-			if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
-				printf(_("could not render text\n"));
-				return 1;
-			}
-			if (save_png != NULL) {
-				write_png(im, save_png);
-			} else {
-				print_img(ptdev, im);
-			}
-			gdImageDestroy(im);
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			ptouch_cutmark(ptdev);
 		} else {
 			usage(argv[0]);
 		}
 	}
-	if (ptouch_eject(ptdev) != 0) {
-		printf(_("ptouch_eject() failed\n"));
-		return -1;
+
+	if (lines) {
+		if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
+			printf(_("could not render text\n"));
+			return 1;
+		}
+	}
+
+	if (im) {
+		if (save_png) {
+			write_png(im, save_png);
+		} else {
+			print_img(ptdev, im);
+			if (ptouch_eject(ptdev) != 0) {
+				printf(_("ptouch_eject() failed\n"));
+				return -1;
+			}
+		}
+		gdImageDestroy(im);
 	}
 	ptouch_close(ptdev);
 	libusb_exit(NULL);
