@@ -294,6 +294,28 @@ gdImage *img_append(gdImage *in_1, gdImage *in_2)
 	return out;
 }
 
+gdImage *img_cutmark(int tape_width)
+{
+	gdImage *out=NULL;
+	int style_dashed[6];
+
+	out=gdImageCreatePalette(9, tape_width);
+	if (out == NULL) {
+		return NULL;
+	}
+	gdImageColorAllocate(out, 255, 255, 255);
+	int black=gdImageColorAllocate(out, 0, 0, 0);
+	style_dashed[0]=gdTransparent;
+	style_dashed[1]=gdTransparent;
+	style_dashed[2]=gdTransparent;
+	style_dashed[3]=black;
+	style_dashed[4]=black;
+	style_dashed[5]=black;
+	gdImageSetStyle(out, style_dashed, 6);
+	gdImageLine(out, 5, 0, 5, tape_width-1, gdStyled);
+	return out;
+}
+
 void usage(char *progname)
 {
 	printf("usage: %s [options] <print-command(s)>\n", progname);
@@ -442,7 +464,9 @@ int main(int argc, char *argv[])
 				gdImageDestroy(im);
 			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
-			ptouch_cutmark(ptdev);
+			im=img_cutmark(tape_width);
+			out=img_append(out, im);
+			gdImageDestroy(im);
 		} else {
 			usage(argv[0]);
 		}

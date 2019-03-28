@@ -81,7 +81,6 @@ int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len);
 int ptouch_init(ptouch_dev ptdev);
 int ptouch_lf(ptouch_dev ptdev);
 int ptouch_ff(ptouch_dev ptdev);
-int ptouch_cutmark(ptouch_dev ptdev);
 int ptouch_eject(ptouch_dev ptdev);
 int ptouch_getstatus(ptouch_dev ptdev);
 int ptouch_getmaxwidth(ptouch_dev ptdev);

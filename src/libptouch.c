@@ -189,34 +189,6 @@ int ptouch_eject(ptouch_dev ptdev)
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
-/* print a "cut here" mark (it's just a dashed line) */
-#define CUTMARK_SPACING 5
-int ptouch_cutmark(ptouch_dev ptdev)
-{
-	uint8_t buf[32];
-	int i,len=16;
-
-	for (i=0; i<CUTMARK_SPACING; i++) {
-		ptouch_lf(ptdev);
-	}
-	ptouch_rasterstart(ptdev);
-	buf[0]=0x47;
-	buf[1]=len;
-	buf[2]=0;
-	memset(buf+3, 0, len);
-	int offset=(64-ptouch_getmaxwidth(ptdev)/2);
-	for (i=0; i<ptouch_getmaxwidth(ptdev); i++) {
-		if ((i%8) <= 3) {	/* pixels 0-3 get set, 4-7 are unset */
-			buf[3+15-((offset+i)/8)] |= 1<<((offset+i)%8);
-		}
-	}
-	ptouch_send(ptdev, buf, len+3);
-	for (i=0; i<CUTMARK_SPACING; i++) {
-		ptouch_lf(ptdev);
-	}
-	return 0;
-}
-
 void ptouch_rawstatus(uint8_t raw[32])
 {
 	fprintf(stderr, _("debug: dumping raw status bytes\n"));
