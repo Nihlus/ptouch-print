@@ -254,6 +254,46 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 	return im;
 }
 
+gdImage *img_append(gdImage *in_1, gdImage *in_2)
+{
+	gdImage *out=NULL;
+	int width=0;
+	int i_1_x=0;
+	int length=0;
+
+	if (in_1 != NULL) {
+		width=gdImageSY(in_1);
+		length=gdImageSX(in_1);
+		i_1_x=gdImageSX(in_1);
+	}
+	if (in_2 != NULL) {
+		length += gdImageSX(in_2);
+		/* width should be the same, but let's be sure */
+		if (gdImageSY(in_2) > width) {
+			width=gdImageSY(in_2);
+		}
+	}
+	if ((width == 0) || (length == 0)) {
+		return NULL;
+	}
+	out=gdImageCreatePalette(length, width);
+	if (out == NULL) {
+		return NULL;
+	}
+	gdImageColorAllocate(out, 255, 255, 255);
+	gdImageColorAllocate(out, 0, 0, 0);
+	printf("created new img width dimensionx %d * %d\n", length, width);
+	if (in_1 != NULL) {
+		gdImageCopy(out, in_1, 0, 0, 0, 0, gdImageSX(in_1), gdImageSY(in_1));
+		printf("copied part 1\n");
+	}
+	if (in_2 != NULL) {
+		gdImageCopy(out, in_2, i_1_x, 0, 0, 0, gdImageSX(in_2), gdImageSY(in_2));
+		printf("copied part 2\n");
+	}
+	return out;
+}
+
 void usage(char *progname)
 {
 	printf("usage: %s [options] <print-command(s)>\n", progname);
@@ -330,6 +370,7 @@ int main(int argc, char *argv[])
 	int i, lines = 0, tape_width;
 	char *line[MAX_LINES];
 	gdImage *im=NULL;
+	gdImage *out=NULL;
 	ptouch_dev ptdev=NULL;
 
 	setlocale(LC_ALL, "");
@@ -382,6 +423,8 @@ int main(int argc, char *argv[])
 			exit(0);
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
 			im=image_load(argv[++i]);
+			out=img_append(out, im);
+			gdImageDestroy(im);
 		} else if (strcmp(&argv[i][1], "-text") == 0) {
 			for (lines=0; (lines < MAX_LINES) && (i < argc); lines++) {
 				if ((i+1 >= argc) || (argv[i+1][0] == '-')) {
@@ -390,31 +433,31 @@ int main(int argc, char *argv[])
 				i++;
 				line[lines]=argv[i];
 			}
+			if (lines) {
+				if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
+					printf(_("could not render text\n"));
+					return 1;
+				}
+				out=img_append(out, im);
+				gdImageDestroy(im);
+			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			ptouch_cutmark(ptdev);
 		} else {
 			usage(argv[0]);
 		}
 	}
-
-	if (lines) {
-		if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
-			printf(_("could not render text\n"));
-			return 1;
-		}
-	}
-
-	if (im) {
+	if (out) {
 		if (save_png) {
-			write_png(im, save_png);
+			write_png(out, save_png);
 		} else {
-			print_img(ptdev, im);
+			print_img(ptdev, out);
 			if (ptouch_eject(ptdev) != 0) {
 				printf(_("ptouch_eject() failed\n"));
 				return -1;
 			}
 		}
-		gdImageDestroy(im);
+		gdImageDestroy(out);
 	}
 	ptouch_close(ptdev);
 	libusb_exit(NULL);
