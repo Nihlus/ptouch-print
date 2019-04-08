@@ -1,7 +1,7 @@
 /*
 	ptouch-print - Print labels with images or text on a Brother P-Touch
 	
-	Copyright (C) 2015-2017 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
+	Copyright (C) 2015-2019 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
 
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
@@ -39,7 +39,10 @@ int find_fontsize(int want_px, char *font, char *text);
 int needed_width(char *text, char *font, int fsz);
 int print_img(ptouch_dev ptdev, gdImage *im);
 int write_png(gdImage *im, const char *file);
+gdImage *img_append(gdImage *in_1, gdImage *in_2);
+gdImage *img_cutmark(int tape_width);
 gdImage *render_text(char *font, char *line[], int lines, int tape_width);
+void unsupported_printer(ptouch_dev ptdev);
 void usage(char *progname);
 int parse_args(int argc, char **argv);
 
@@ -55,11 +58,14 @@ int fontsize=0;
 
 void rasterline_setpixel(uint8_t rasterline[16], int pixel)
 {
-	rasterline[15-(pixel/8)] |= 1<<(pixel%8);
+	if (pixel > 128) {
+		return;
+	}
+	rasterline[15-(pixel/8)] |= (uint8_t)(1<<(pixel%8));
 	return;
 }
 
-void unsupported_printer(ptouch_dev ptdev)
+void unsupported_printer(__attribute__((unused)) ptouch_dev ptdev)
 {
 	printf(_("your printer unfortunately is not supported by this tool\n"));
 	printf(_("the rasterdata a transferred in some other (unknown) format\n"));
@@ -71,6 +77,10 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 	int d,i,k,offset,tape_width;
 	uint8_t rasterline[16];
 
+	if (!im) {
+		printf(_("nothing to print\n"));
+		return -1;
+	}
 	if ((ptdev->devinfo->flags & FLAG_UNSUP_RASTER) == FLAG_UNSUP_RASTER) {
 		unsupported_printer(ptdev);
 	}
@@ -83,6 +93,10 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		return -1;
 	}
 	offset=64-(gdImageSY(im)/2);	/* always print centered  */
+	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
+		printf("enable PackBits mode\n");
+	        ptouch_enable_packbits(ptdev);
+	}
 	if (ptouch_rasterstart(ptdev) != 0) {
 		printf(_("ptouch_rasterstart() failed\n"));
 		return -1;
@@ -95,7 +109,7 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 			}
 		}
 		if (ptouch_sendraster(ptdev, rasterline, 16) != 0) {
-			printf(_("ptouch_send() failed\n"));
+			printf(_("ptouch_sendraster() failed\n"));
 			return -1;
 		}
 	}
@@ -246,6 +260,68 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 	return im;
 }
 
+gdImage *img_append(gdImage *in_1, gdImage *in_2)
+{
+	gdImage *out=NULL;
+	int width=0;
+	int i_1_x=0;
+	int length=0;
+
+	if (in_1 != NULL) {
+		width=gdImageSY(in_1);
+		length=gdImageSX(in_1);
+		i_1_x=gdImageSX(in_1);
+	}
+	if (in_2 != NULL) {
+		length += gdImageSX(in_2);
+		/* width should be the same, but let's be sure */
+		if (gdImageSY(in_2) > width) {
+			width=gdImageSY(in_2);
+		}
+	}
+	if ((width == 0) || (length == 0)) {
+		return NULL;
+	}
+	out=gdImageCreatePalette(length, width);
+	if (out == NULL) {
+		return NULL;
+	}
+	gdImageColorAllocate(out, 255, 255, 255);
+	gdImageColorAllocate(out, 0, 0, 0);
+	printf("created new img width dimensionx %d * %d\n", length, width);
+	if (in_1 != NULL) {
+		gdImageCopy(out, in_1, 0, 0, 0, 0, gdImageSX(in_1), gdImageSY(in_1));
+		printf("copied part 1\n");
+	}
+	if (in_2 != NULL) {
+		gdImageCopy(out, in_2, i_1_x, 0, 0, 0, gdImageSX(in_2), gdImageSY(in_2));
+		printf("copied part 2\n");
+	}
+	return out;
+}
+
+gdImage *img_cutmark(int tape_width)
+{
+	gdImage *out=NULL;
+	int style_dashed[6];
+
+	out=gdImageCreatePalette(9, tape_width);
+	if (out == NULL) {
+		return NULL;
+	}
+	gdImageColorAllocate(out, 255, 255, 255);
+	int black=gdImageColorAllocate(out, 0, 0, 0);
+	style_dashed[0]=gdTransparent;
+	style_dashed[1]=gdTransparent;
+	style_dashed[2]=gdTransparent;
+	style_dashed[3]=black;
+	style_dashed[4]=black;
+	style_dashed[5]=black;
+	gdImageSetStyle(out, style_dashed, 6);
+	gdImageLine(out, 5, 0, 5, tape_width-1, gdStyled);
+	return out;
+}
+
 void usage(char *progname)
 {
 	printf("usage: %s [options] <print-command(s)>\n", progname);
@@ -322,6 +398,7 @@ int main(int argc, char *argv[])
 	int i, lines = 0, tape_width;
 	char *line[MAX_LINES];
 	gdImage *im=NULL;
+	gdImage *out=NULL;
 	ptouch_dev ptdev=NULL;
 
 	setlocale(LC_ALL, "");
@@ -366,9 +443,16 @@ int main(int argc, char *argv[])
 			}
 		} else if (strcmp(&argv[i][1], "-info") == 0) {
 			printf(_("maximum printing width for this tape is %ipx\n"), tape_width);
+			printf("media type = %02x\n", ptdev->status->media_type);
+			printf("media width = %d mm\n", ptdev->status->media_width);
+			printf("tape color = %02x\n", ptdev->status->tape_color);
+			printf("text color = %02x\n", ptdev->status->text_color);
+			printf("error = %04x\n", ptdev->status->error);
 			exit(0);
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
 			im=image_load(argv[++i]);
+			out=img_append(out, im);
+			gdImageDestroy(im);
 		} else if (strcmp(&argv[i][1], "-text") == 0) {
 			for (lines=0; (lines < MAX_LINES) && (i < argc); lines++) {
 				if ((i+1 >= argc) || (argv[i+1][0] == '-')) {
@@ -377,28 +461,33 @@ int main(int argc, char *argv[])
 				i++;
 				line[lines]=argv[i];
 			}
+			if (lines) {
+				if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
+					printf(_("could not render text\n"));
+					return 1;
+				}
+				out=img_append(out, im);
+				gdImageDestroy(im);
+			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
-			ptouch_cutmark(ptdev);
+			im=img_cutmark(tape_width);
+			out=img_append(out, im);
+			gdImageDestroy(im);
 		} else {
 			usage(argv[0]);
 		}
 	}
-
-	if (lines) {
-		if ((im=render_text(font_file, line, lines, tape_width)) == NULL) {
-			printf(_("could not render text\n"));
-			return 1;
+	if (out) {
+		if (save_png) {
+			write_png(out, save_png);
+		} else {
+			print_img(ptdev, out);
+			if (ptouch_eject(ptdev) != 0) {
+				printf(_("ptouch_eject() failed\n"));
+				return -1;
+			}
 		}
-	}
-		
-	if (save_png) {
-		write_png(im, save_png);
-	} else {
-		print_img(ptdev, im);
-		if (ptouch_eject(ptdev) != 0) {
-			printf(_("ptouch_eject() failed\n"));
-			return -1;
-		}
+		gdImageDestroy(out);
 	}
 	gdImageDestroy(im);
 	ptouch_close(ptdev);

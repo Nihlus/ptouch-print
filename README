@@ -16,7 +16,7 @@ https://mockmoon-cybernetics.ch/computer/p-touch2430pc/
 
 Compile instructions:
 
-autoreconf -i
+./autogen.sh
 ./configure --prefix=/usr
 make
 

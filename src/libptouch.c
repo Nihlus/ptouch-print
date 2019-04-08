@@ -1,7 +1,7 @@
 /*
 	libptouch - functions to help accessing a brother ptouch
 
-	Copyright (C) 2013-2017 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
+	Copyright (C) 2013-2019 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
 
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
@@ -45,13 +45,11 @@ struct _pt_tape_info tape_info[]= {
 
 struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px */
-	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_FORCE_TIFF},	/* 180dpi, 128px, maximum tape width 24mm, must send TIFF compressed pixel data */
+	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_RASTER_PACKBITS},	/* 180dpi, 128px, maximum tape width 24mm, must send TIFF compressed pixel data */
 	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},		/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
 	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
-	{0x04f9, 0x2073, "PT-D450VP", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
-	/* Notes about the PT-D450VP: Tape detecting works, but printing does
-	   not. The tape is just blank. I assume, the printer does not understand
-	   the sent rasterdata. I'm also unsure about how many dots width we have */
+	{0x04f9, 0x2073, "PT-D450VP", 128, FLAG_RASTER_PACKBITS},
+	/* Notes about the PT-D450VP: I'm unsure if print width really is 128px */
 	{0x04f9, 0x2041, "PT-2730PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px, max tape width 24mm - reported to work with some quirks */
 	/* Notes about the PT-2730PC: was reported to need 48px whitespace
 	   within png-images before content is actually printed - can not check this */
@@ -74,6 +72,10 @@ int ptouch_open(ptouch_dev *ptdev)
 		return -1;
 	}
 	if (((*ptdev)->devinfo=malloc(sizeof(struct _pt_dev_info))) == NULL) {
+		fprintf(stderr, _("out of memory\n"));
+		return -1;
+	}
+	if (((*ptdev)->status=malloc(sizeof(struct _ptouch_stat))) == NULL) {
 		fprintf(stderr, _("out of memory\n"));
 		return -1;
 	}
@@ -130,19 +132,19 @@ int ptouch_close(ptouch_dev ptdev)
 	return 0;
 }
 
-int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len)
+int ptouch_send(ptouch_dev ptdev, uint8_t *data, size_t len)
 {
-	int r,tx;
+	int r, tx;
 
-	if (ptdev == NULL) {
+	if ((ptdev == NULL) || (len > 128)) {
 		return -1;
 	}
-	if ((r=libusb_bulk_transfer(ptdev->h, 0x02, data, len, &tx, 0)) != 0) {
+	if ((r=libusb_bulk_transfer(ptdev->h, 0x02, data, (int)len, &tx, 0)) != 0) {
 		fprintf(stderr, _("write error: %s\n"), libusb_error_name(r));
 		return -1;
 	}
-	if (tx != len) {
-		fprintf(stderr, _("write error: could send only %i of %i bytes\n"), tx, len);
+	if (tx != (int)len) {
+		fprintf(stderr, _("write error: could send only %i of %ld bytes\n"), tx, len);
 		return -1;
 	}
 	return 0;
@@ -151,6 +153,12 @@ int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len)
 int ptouch_init(ptouch_dev ptdev)
 {
 	char cmd[]="\x1b\x40";		/* 1B 40 = ESC @ = INIT */
+	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
+}
+
+int ptouch_enable_packbits(ptouch_dev ptdev)
+{				/* 4D 00 = disable compression */
+	char cmd[] = "M\x02";	/* 4D 02 = enable packbits compression mode */
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
@@ -181,34 +189,6 @@ int ptouch_eject(ptouch_dev ptdev)
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
-/* print a "cut here" mark (it's just a dashed line) */
-#define CUTMARK_SPACING 5
-int ptouch_cutmark(ptouch_dev ptdev)
-{
-	uint8_t buf[32];
-	int i,len=16;
-
-	for (i=0; i<CUTMARK_SPACING; i++) {
-		ptouch_lf(ptdev);
-	}
-	ptouch_rasterstart(ptdev);
-	buf[0]=0x47;
-	buf[1]=len;
-	buf[2]=0;
-	memset(buf+3, 0, len);
-	int offset=(64-ptouch_getmaxwidth(ptdev)/2);
-	for (i=0; i<ptouch_getmaxwidth(ptdev); i++) {
-		if ((i%8) <= 3) {	/* pixels 0-3 get set, 4-7 are unset */
-			buf[3+15-((offset+i)/8)] |= 1<<((offset+i)%8);
-		}
-	}
-	ptouch_send(ptdev, buf, len+3);
-	for (i=0; i<CUTMARK_SPACING; i++) {
-		ptouch_lf(ptdev);
-	}
-	return 0;
-}
-
 void ptouch_rawstatus(uint8_t raw[32])
 {
 	fprintf(stderr, _("debug: dumping raw status bytes\n"));
@@ -224,7 +204,7 @@ void ptouch_rawstatus(uint8_t raw[32])
 
 int ptouch_getstatus(ptouch_dev ptdev)
 {
-	char cmd[]="\x1b\x69\x53";
+	char cmd[]="\x1biS";	/* 1B 69 53 = ESC i S = Status info request */
 	uint8_t buf[32];
 	int i, r, tx=0, tries=0;
 	struct timespec w;
@@ -246,14 +226,7 @@ int ptouch_getstatus(ptouch_dev ptdev)
 	}
 	if (tx == 32) {
 		if (buf[0]==0x80 && buf[1]==0x20) {
-			memcpy(ptdev->raw, buf, 32);
-			if (buf[8] != 0) {
-				fprintf(stderr, _("Error 1 = %02x\n"), buf[8]);
-			}
-			if (buf[9] != 0) {
-				fprintf(stderr, _("Error 2 = %02x\n"), buf[9]);
-			}
-			ptdev->tape_width_mm=buf[10];
+			memcpy(ptdev->status, buf, 32);
 			ptdev->tape_width_px=0;
 			for (i=0; tape_info[i].mm > 0; i++) {
 				if (tape_info[i].mm == buf[10]) {
@@ -263,8 +236,6 @@ int ptouch_getstatus(ptouch_dev ptdev)
 			if (ptdev->tape_width_px == 0) {
 				fprintf(stderr, _("unknown tape width of %imm, please report this.\n"), buf[10]);
 			}
-			ptdev->media_type=buf[11];
-			ptdev->status=buf[18];
 			return 0;
 		}
 	}
@@ -292,25 +263,24 @@ int ptouch_getmaxwidth(ptouch_dev ptdev)
 	return ptdev->tape_width_px;
 }
 
-int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, int len)
+int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len)
 {
-	uint8_t buf[70];
+	uint8_t buf[64];
 	int rc;
 
-	if (len > ptdev->devinfo->max_px / 8) {
+	if (len > (size_t)(ptdev->devinfo->max_px / 8)) {
 		return -1;
 	}
-
 	buf[0]=0x47;
-	if (ptdev->devinfo->flags & FLAG_FORCE_TIFF) {
-	        /* Fake compression by encoding a single uncompressed run */
-	        buf[1] = len + 1;
-	        buf[2] = 0;
-	        buf[3] = len - 1;
-	        memcpy(buf + 4, data, len);
-	        rc = ptouch_send(ptdev, buf, len + 4);
+	if (ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) {
+		/* Fake compression by encoding a single uncompressed run */
+		buf[1] = (uint8_t)(len + 1);
+		buf[2] = 0;
+		buf[3] = (uint8_t)(len - 1);
+		memcpy(buf + 4, data, len);
+		rc = ptouch_send(ptdev, buf, len + 4);
 	} else {
-		buf[1] = len;
+		buf[1] = (uint8_t)len;
 		buf[2] = 0;
 		memcpy(buf + 3, data, len);
 		rc = ptouch_send(ptdev, buf, len + 3);
