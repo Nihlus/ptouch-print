@@ -1,7 +1,7 @@
 /*
 	libptouch - functions to help accessing a brother ptouch
 
-	Copyright (C) 2013-2017 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
+	Copyright (C) 2013-2019 Dominic Radermacher <blip@mockmoon-cybernetics.ch>
 
 	This program is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License version 3 as
@@ -132,19 +132,19 @@ int ptouch_close(ptouch_dev ptdev)
 	return 0;
 }
 
-int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len)
+int ptouch_send(ptouch_dev ptdev, uint8_t *data, size_t len)
 {
-	int r,tx;
+	int r, tx;
 
-	if (ptdev == NULL) {
+	if ((ptdev == NULL) || (len > 128)) {
 		return -1;
 	}
-	if ((r=libusb_bulk_transfer(ptdev->h, 0x02, data, len, &tx, 0)) != 0) {
+	if ((r=libusb_bulk_transfer(ptdev->h, 0x02, data, (int)len, &tx, 0)) != 0) {
 		fprintf(stderr, _("write error: %s\n"), libusb_error_name(r));
 		return -1;
 	}
-	if (tx != len) {
-		fprintf(stderr, _("write error: could send only %i of %i bytes\n"), tx, len);
+	if (tx != (int)len) {
+		fprintf(stderr, _("write error: could send only %i of %ld bytes\n"), tx, len);
 		return -1;
 	}
 	return 0;
@@ -263,25 +263,24 @@ int ptouch_getmaxwidth(ptouch_dev ptdev)
 	return ptdev->tape_width_px;
 }
 
-int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, int len)
+int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len)
 {
-	uint8_t buf[70];
+	uint8_t buf[64];
 	int rc;
 
-	if (len > ptdev->devinfo->max_px / 8) {
+	if (len > (size_t)(ptdev->devinfo->max_px / 8)) {
 		return -1;
 	}
-
 	buf[0]=0x47;
 	if (ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) {
-	        /* Fake compression by encoding a single uncompressed run */
-	        buf[1] = len + 1;
-	        buf[2] = 0;
-	        buf[3] = len - 1;
-	        memcpy(buf + 4, data, len);
-	        rc = ptouch_send(ptdev, buf, len + 4);
+		/* Fake compression by encoding a single uncompressed run */
+		buf[1] = (uint8_t)(len + 1);
+		buf[2] = 0;
+		buf[3] = (uint8_t)(len - 1);
+		memcpy(buf + 4, data, len);
+		rc = ptouch_send(ptdev, buf, len + 4);
 	} else {
-		buf[1] = len;
+		buf[1] = (uint8_t)len;
 		buf[2] = 0;
 		memcpy(buf + 3, data, len);
 		rc = ptouch_send(ptdev, buf, len + 3);

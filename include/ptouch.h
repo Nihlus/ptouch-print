@@ -77,7 +77,7 @@ typedef struct _ptouch_dev *ptouch_dev;
 
 int ptouch_open(ptouch_dev *ptdev);
 int ptouch_close(ptouch_dev ptdev);
-int ptouch_send(ptouch_dev ptdev, uint8_t *data, int len);
+int ptouch_send(ptouch_dev ptdev, uint8_t *data, size_t len);
 int ptouch_init(ptouch_dev ptdev);
 int ptouch_lf(ptouch_dev ptdev);
 int ptouch_ff(ptouch_dev ptdev);
@@ -86,4 +86,4 @@ int ptouch_getstatus(ptouch_dev ptdev);
 int ptouch_getmaxwidth(ptouch_dev ptdev);
 int ptouch_enable_packbits(ptouch_dev ptdev);
 int ptouch_rasterstart(ptouch_dev ptdev);
-int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, int len);
+int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len);

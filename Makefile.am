@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = subdir-objects
 AM_CPPFLAGS= -DLOCALEDIR='"$(localedir)"'
-AM_CFLAGS=-g -std=c11 -Wall -O3 -I$(top_srcdir)/include
+AM_CFLAGS=-g -std=c11 -Wall -Wextra -Wunused -O3 -I$(top_srcdir)/include -fPIC
 SUBDIRS = po
 ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = config.rpath m4/ChangeLog Makefile.old

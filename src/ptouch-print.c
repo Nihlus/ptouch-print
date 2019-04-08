@@ -39,7 +39,10 @@ int find_fontsize(int want_px, char *font, char *text);
 int needed_width(char *text, char *font, int fsz);
 int print_img(ptouch_dev ptdev, gdImage *im);
 int write_png(gdImage *im, const char *file);
+gdImage *img_append(gdImage *in_1, gdImage *in_2);
+gdImage *img_cutmark(int tape_width);
 gdImage *render_text(char *font, char *line[], int lines, int tape_width);
+void unsupported_printer(ptouch_dev ptdev);
 void usage(char *progname);
 int parse_args(int argc, char **argv);
 
@@ -55,11 +58,14 @@ int fontsize=0;
 
 void rasterline_setpixel(uint8_t rasterline[16], int pixel)
 {
-	rasterline[15-(pixel/8)] |= 1<<(pixel%8);
+	if (pixel > 128) {
+		return;
+	}
+	rasterline[15-(pixel/8)] |= (uint8_t)(1<<(pixel%8));
 	return;
 }
 
-void unsupported_printer(ptouch_dev ptdev)
+void unsupported_printer(__attribute__((unused)) ptouch_dev ptdev)
 {
 	printf(_("your printer unfortunately is not supported by this tool\n"));
 	printf(_("the rasterdata a transferred in some other (unknown) format\n"));
