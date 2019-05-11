@@ -453,6 +453,7 @@ int main(int argc, char *argv[])
 			im=image_load(argv[++i]);
 			out=img_append(out, im);
 			gdImageDestroy(im);
+			im = NULL;
 		} else if (strcmp(&argv[i][1], "-text") == 0) {
 			for (lines=0; (lines < MAX_LINES) && (i < argc); lines++) {
 				if ((i+1 >= argc) || (argv[i+1][0] == '-')) {
@@ -468,11 +469,13 @@ int main(int argc, char *argv[])
 				}
 				out=img_append(out, im);
 				gdImageDestroy(im);
+				im = NULL;
 			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			im=img_cutmark(tape_width);
 			out=img_append(out, im);
 			gdImageDestroy(im);
+			im = NULL;
 		} else {
 			usage(argv[0]);
 		}
@@ -489,7 +492,9 @@ int main(int argc, char *argv[])
 		}
 		gdImageDestroy(out);
 	}
-	gdImageDestroy(im);
+	if (im != NULL) {
+	    gdImageDestroy(im);
+	}
 	ptouch_close(ptdev);
 	libusb_exit(NULL);
 	return 0;
