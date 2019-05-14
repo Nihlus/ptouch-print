@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 		gdImageDestroy(out);
 	}
 	if (im != NULL) {
-	    gdImageDestroy(im);
+		gdImageDestroy(im);
 	}
 	ptouch_close(ptdev);
 	libusb_exit(NULL);
