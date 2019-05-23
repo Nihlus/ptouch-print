@@ -47,10 +47,12 @@ struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_RASTER_PACKBITS},	/* 180dpi, 128px, maximum tape width 24mm, must send TIFF compressed pixel data */
 	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},		/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
 	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px */
+	{0x04f9, 0x2031, "PT-2430PC (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2041, "PT-2730", 128, FLAG_NONE},		/* 180dpi, maximum 128px, max tape width 24mm - reported to work with some quirks */
 	/* Notes about the PT-2730: was reported to need 48px whitespace
 	   within png-images before content is actually printed - can not check this */
 	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
+	{0x04f9, 0x2064, "PT-P700 (PLite Mode)", 120, FLAG_PLITE},
 	{0x04f9, 0x2073, "PT-D450", 128, FLAG_RASTER_PACKBITS},
 	/* Notes about the PT-D450: I'm unsure if print width really is 128px */
 	{0,0,"",0,0}
@@ -99,6 +101,16 @@ int ptouch_open(ptouch_dev *ptdev)
 					ptdevs[k].name,
 					libusb_get_bus_number(dev),
 					libusb_get_device_address(dev));
+				if (ptdevs[k].flags & FLAG_PLITE) {
+					printf("Printer is in P-Lite Mode, which is unsupported\n\n");
+					printf("Turn off P-Lite mode by changing switch from position EL to position E\n");
+					printf("or by pressing the PLite button for ~ 2 seconds (or consult the manual)\n");
+					return -1;
+				}
+				if (ptdevs[k].flags & FLAG_UNSUP_RASTER) {
+					printf("Unfortunately, that printer currently is unsupported (it has a different raster data transfer)\n");
+					return -1;
+				}
 				if ((r=libusb_open(dev, &handle)) != 0) {
 					fprintf(stderr, _("libusb_open error :%s\n"), libusb_error_name(r));
 					return -1;
