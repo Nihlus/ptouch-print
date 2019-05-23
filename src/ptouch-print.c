@@ -19,6 +19,7 @@
 
 #include <stdio.h>	/* printf() */
 #include <stdlib.h>	/* exit(), malloc() */
+#include <stdbool.h>
 #include <string.h>	/* strcmp(), memcmp() */
 #include <sys/types.h>	/* open() */
 #include <sys/stat.h>	/* open() */
@@ -52,6 +53,7 @@ char *font_file="DejaVuSans";
 char *save_png=NULL;
 int verbose=0;
 int fontsize=0;
+bool debug=false;
 
 /* --------------------------------------------------------------------
    -------------------------------------------------------------------- */
@@ -65,13 +67,6 @@ void rasterline_setpixel(uint8_t rasterline[16], int pixel)
 	return;
 }
 
-void unsupported_printer(__attribute__((unused)) ptouch_dev ptdev)
-{
-	printf(_("your printer unfortunately is not supported by this tool\n"));
-	printf(_("the rasterdata a transferred in some other (unknown) format\n"));
-	exit(1);
-}
-
 int print_img(ptouch_dev ptdev, gdImage *im)
 {
 	int d,i,k,offset,tape_width;
@@ -80,9 +75,6 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 	if (!im) {
 		printf(_("nothing to print\n"));
 		return -1;
-	}
-	if ((ptdev->devinfo->flags & FLAG_UNSUP_RASTER) == FLAG_UNSUP_RASTER) {
-		unsupported_printer(ptdev);
 	}
 	tape_width=ptouch_getmaxwidth(ptdev);
 	/* find out whether color 0 or color 1 is darker */
@@ -368,6 +360,8 @@ int parse_args(int argc, char **argv)
 			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			continue;	/* not done here */
+		} else if (strcmp(&argv[i][1], "-debug") == 0) {
+			debug=true;
 		} else if (strcmp(&argv[i][1], "-info") == 0) {
 			continue;	/* not done here */
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
