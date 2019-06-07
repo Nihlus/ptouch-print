@@ -86,7 +86,9 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 	}
 	offset=64-(gdImageSY(im)/2);	/* always print centered  */
 	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
-		printf("enable PackBits mode\n");
+		if (debug) {
+			printf("enable PackBits mode\n");
+		}
 	        ptouch_enable_packbits(ptdev);
 	}
 	if (ptouch_rasterstart(ptdev) != 0) {
@@ -205,11 +207,13 @@ int needed_width(char *text, char *font, int fsz)
 gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 {
 	int brect[8];
-	int i, black, x=0, tmp, fsz=0, ofs;
+	int i, black, x=0, tmp=0, fsz=0;
 	char *p;
 	gdImage *im=NULL;
 
-//	printf(_("%i lines, font = '%s'\n"), lines, font);
+	if (debug) {
+		printf(_("render_text(): %i lines, font = '%s'\n"), lines, font);
+	}
 	if (gdFTUseFontConfig(1) != GD_TRUE) {
 		printf(_("warning: font config not available\n"));
 	}
@@ -238,14 +242,28 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 	gdImageColorAllocate(im, 255, 255, 255);
 	black=gdImageColorAllocate(im, 0, 0, 0);
 	/* gdImageStringFT(im,brect,fg,fontlist,size,angle,x,y,string) */
+	/* find max needed line height for ALL lines */
+	int max_height=0;
 	for (i=0; i<lines; i++) {
 		if ((p=gdImageStringFT(NULL, &brect[0], -black, font, fsz, 0.0, 0, 0, line[i])) != NULL) {
 			printf(_("error in gdImageStringFT: %s\n"), p);
 		}
-		tmp=brect[1]-brect[5];
-		ofs=get_baselineoffset(line[i], font_file, fsz);
-//		printf("line %i height = %ipx, pos = %i\n", i+1, tmp, i*(tape_width/lines)+tmp-ofs-1);
-		if ((p=gdImageStringFT(im, &brect[0], -black, font, fsz, 0.0, 0, i*(tape_width/lines)+tmp-ofs-1, line[i])) != NULL) {
+		int lineheight=brect[1]-brect[5];
+		if (lineheight > max_height) {
+			max_height=lineheight;
+		}
+	}
+	if (debug) {
+		printf("debug: needed (max) height is %ipx\n", max_height);
+	}
+	/* now render lines */
+	for (i=0; i<lines; i++) {
+		//ofs=get_baselineoffset(line[i], font_file, fsz);
+		int pos=((i+1)*(tape_width/(lines+1)))+(max_height/2);
+		if (debug) {
+			printf("debug: line %i pos=%i\n", i+1, pos);
+		}
+		if ((p=gdImageStringFT(im, &brect[0], -black, font, fsz, 0.0, 0, pos, line[i])) != NULL) {
 			printf(_("error in gdImageStringFT: %s\n"), p);
 		}
 	}
@@ -280,14 +298,20 @@ gdImage *img_append(gdImage *in_1, gdImage *in_2)
 	}
 	gdImageColorAllocate(out, 255, 255, 255);
 	gdImageColorAllocate(out, 0, 0, 0);
-	printf("created new img width dimensionx %d * %d\n", length, width);
+	if (debug) {
+		printf("debug: created new img with size %d * %d\n", length, width);
+	}
 	if (in_1 != NULL) {
 		gdImageCopy(out, in_1, 0, 0, 0, 0, gdImageSX(in_1), gdImageSY(in_1));
-		printf("copied part 1\n");
+		if (debug) {
+			printf("debug: copied part 1\n");
+		}
 	}
 	if (in_2 != NULL) {
 		gdImageCopy(out, in_2, i_1_x, 0, 0, 0, gdImageSX(in_2), gdImageSY(in_2));
-		printf("copied part 2\n");
+		if (debug) {
+			printf("copied part 2\n");
+		}
 	}
 	return out;
 }
@@ -470,6 +494,8 @@ int main(int argc, char *argv[])
 			out=img_append(out, im);
 			gdImageDestroy(im);
 			im = NULL;
+		} else if (strcmp(&argv[i][1], "-debug") == 0) {
+			debug = true;
 		} else {
 			usage(argv[0]);
 		}
