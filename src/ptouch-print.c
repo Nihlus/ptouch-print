@@ -248,6 +248,7 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 		if ((p=gdImageStringFT(NULL, &brect[0], -black, font, fsz, 0.0, 0, 0, line[i])) != NULL) {
 			printf(_("error in gdImageStringFT: %s\n"), p);
 		}
+		//int ofs=get_baselineoffset(line[i], font_file, fsz);
 		int lineheight=brect[1]-brect[5];
 		if (lineheight > max_height) {
 			max_height=lineheight;
@@ -258,10 +259,10 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 	}
 	/* now render lines */
 	for (i=0; i<lines; i++) {
-		//ofs=get_baselineoffset(line[i], font_file, fsz);
-		int pos=((i+1)*(tape_width/(lines+1)))+(max_height/2);
+		int ofs=get_baselineoffset(line[i], font_file, fsz);
+		int pos=((i)*(tape_width/(lines)))+(max_height)-ofs-1;
 		if (debug) {
-			printf("debug: line %i pos=%i\n", i+1, pos);
+			printf("debug: line %i pos=%i ofs=%i\n", i+1, pos, ofs);
 		}
 		if ((p=gdImageStringFT(im, &brect[0], -black, font, fsz, 0.0, 0, pos, line[i])) != NULL) {
 			printf(_("error in gdImageStringFT: %s\n"), p);
