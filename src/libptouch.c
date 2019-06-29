@@ -45,14 +45,18 @@ struct _pt_tape_info tape_info[]= {
 
 struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x2007, "PT-2420PC", 128, FLAG_RASTER_PACKBITS},	/* 180dpi, 128px, maximum tape width 24mm, must send TIFF compressed pixel data */
-	{0x04f9, 0x202c, "PT-1230PC", 76, FLAG_NONE},		/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
+	{0x04f9, 0x202c, "PT-1230PC", 128, FLAG_NONE},		/* 180dpi, supports tapes up to 12mm - I don't know how much pixels it can print! */
+	/* Notes about the PT-1230PC: While it is true that this printer supports
+	   max 12mm tapes, it apparently expects > 76px data - the first 32px
+	   must be blank. */
 	{0x04f9, 0x202d, "PT-2430PC", 128, FLAG_NONE},		/* 180dpi, maximum 128px */
+	{0x04f9, 0x2030, "PT-1230PC (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2031, "PT-2430PC (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2041, "PT-2730", 128, FLAG_NONE},		/* 180dpi, maximum 128px, max tape width 24mm - reported to work with some quirks */
 	/* Notes about the PT-2730: was reported to need 48px whitespace
 	   within png-images before content is actually printed - can not check this */
-	{0x04f9, 0x2061, "PT-P700", 120, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
-	{0x04f9, 0x2064, "PT-P700 (PLite Mode)", 120, FLAG_PLITE},
+	{0x04f9, 0x2061, "PT-P700", 128, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
+	{0x04f9, 0x2064, "PT-P700 (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2073, "PT-D450", 128, FLAG_RASTER_PACKBITS},
 	/* Notes about the PT-D450: I'm unsure if print width really is 128px */
 	{0,0,"",0,0}
