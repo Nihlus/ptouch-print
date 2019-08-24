@@ -339,6 +339,21 @@ gdImage *img_cutmark(int tape_width)
 	return out;
 }
 
+gdImage *img_padding(int tape_width, int length)
+{
+	gdImage *out=NULL;
+
+	if ((length < 1) || (length > 256)) {
+		length=1;
+	}
+	out=gdImageCreatePalette(length, tape_width);
+	if (out == NULL) {
+		return NULL;
+	}
+	gdImageColorAllocate(out, 255, 255, 255);
+	return out;
+}
+
 void usage(char *progname)
 {
 	printf("usage: %s [options] <print-command(s)>\n", progname);
@@ -353,6 +368,7 @@ void usage(char *progname)
 	printf("\t\t\t\tIf the text contains spaces, use quotation marks\n\t\t\t\taround it.\n");
 	printf("\t--cutmark\t\tPrint a mark where the tape should be cut\n");
 	printf("\t--fontsize\t\tManually set fontsize\n");
+	printf("\t--pad <n>\t\tAdd n pixels padding (blank tape)\n");
 	exit(1);
 }
 
@@ -390,6 +406,12 @@ int parse_args(int argc, char **argv)
 		} else if (strcmp(&argv[i][1], "-info") == 0) {
 			continue;	/* not done here */
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
+			if (i+1<argc) {
+				i++;
+			} else {
+				usage(argv[0]);
+			}
+		} else if (strcmp(&argv[i][1], "-pad") == 0) {
 			if (i+1<argc) {
 				i++;
 			} else {
@@ -492,6 +514,12 @@ int main(int argc, char *argv[])
 			}
 		} else if (strcmp(&argv[i][1], "-cutmark") == 0) {
 			im=img_cutmark(tape_width);
+			out=img_append(out, im);
+			gdImageDestroy(im);
+			im = NULL;
+		} else if (strcmp(&argv[i][1], "-pad") == 0) {
+			int length=strtol(argv[++i], NULL, 10);
+			im=img_padding(tape_width, length);
 			out=img_append(out, im);
 			gdImageDestroy(im);
 			im = NULL;
