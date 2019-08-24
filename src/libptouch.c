@@ -55,6 +55,9 @@ struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x2041, "PT-2730", 128, FLAG_NONE},		/* 180dpi, maximum 128px, max tape width 24mm - reported to work with some quirks */
 	/* Notes about the PT-2730: was reported to need 48px whitespace
 	   within png-images before content is actually printed - can not check this */
+	{0x04f9, 0x205f, "PT-E500", 128, FLAG_RASTER_PACKBITS},
+	/* Note about the PT-E500: was reported by Jesse Becker with the
+	   remark that it also needs some padding (white pixels) */
 	{0x04f9, 0x2061, "PT-P700", 128, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
 	{0x04f9, 0x2064, "PT-P700 (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2073, "PT-D450", 128, FLAG_RASTER_PACKBITS},
