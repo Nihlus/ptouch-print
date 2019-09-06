@@ -29,6 +29,7 @@ struct _pt_tape_info {
 #define FLAG_UNSUP_RASTER	(0x01)
 #define FLAG_RASTER_PACKBITS	(0x02)
 #define FLAG_PLITE		(0x04)
+#define FLAG_P700_INIT		(0x08)
 
 struct _pt_dev_info {
 	int vid;		/* USB vendor ID */

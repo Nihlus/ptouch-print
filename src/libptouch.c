@@ -58,7 +58,7 @@ struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x205f, "PT-E500", 128, FLAG_RASTER_PACKBITS},
 	/* Note about the PT-E500: was reported by Jesse Becker with the
 	   remark that it also needs some padding (white pixels) */
-	{0x04f9, 0x2061, "PT-P700", 128, FLAG_UNSUP_RASTER},	/* DOES NOT WORK */
+	{0x04f9, 0x2061, "PT-P700", 128, FLAG_RASTER_PACKBITS|FLAG_P700_INIT},
 	{0x04f9, 0x2064, "PT-P700 (PLite Mode)", 128, FLAG_PLITE},
 	{0x04f9, 0x2073, "PT-D450", 128, FLAG_RASTER_PACKBITS},
 	/* Notes about the PT-D450: I'm unsure if print width really is 128px */
@@ -183,7 +183,13 @@ int ptouch_enable_packbits(ptouch_dev ptdev)
 
 int ptouch_rasterstart(ptouch_dev ptdev)
 {
-	char cmd[] = "\x1b\x69\x52\x01";	/* 1B 69 52 01 = Select graphics transfer mode = Raster */
+	/* 1B 69 52 01 = Select graphics transfer mode = Raster */
+	char cmd[] = "\x1b\x69\x52\x01";
+	/* 1B 69 61 01 = switch mode (0=esc/p, 1=raster mode) */
+	char cmd2[] = "\x1b\x69\x61\x01";
+	if (ptdev->devinfo->flags & FLAG_P700_INIT) {
+		return ptouch_send(ptdev, (uint8_t *)cmd2, strlen(cmd2));
+	} /* else */
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
