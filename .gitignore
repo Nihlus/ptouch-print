@@ -41,3 +41,9 @@ INSTALL
 
 # Binaries
 ptouch-print
+
+# IntelliJ Platform files
+/.idea/
+
+# CMake files
+cmake-build-*
