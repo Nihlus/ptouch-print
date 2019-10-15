@@ -240,7 +240,10 @@ gdImage *render_text(char *font, char *line[], int lines, int tape_width)
 			x=tmp;
 		}
 	}
-	im=gdImageCreatePalette(x, tape_width);
+	/* extra space at the end of the label in pixels - 32 to accommodate the text on tapes, and 32 for actual
+	 * padding */
+	int padding = 64;
+	im=gdImageCreatePalette(x + padding, tape_width);
 	gdImageColorAllocate(im, 255, 255, 255);
 	black=gdImageColorAllocate(im, 0, 0, 0);
 	/* gdImageStringFT(im,brect,fg,fontlist,size,angle,x,y,string) */
