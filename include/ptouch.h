@@ -46,7 +46,7 @@ struct _pt_dev_info {
 	int pid;		/* USB product ID */
 	char *name;
 	int dpi;		/* Maximum DPI that can be printed */
-	int bytes_per_line;
+	size_t bytes_per_line;
 	int flags;
 };
 typedef struct _pt_dev_info *pt_dev_info;
