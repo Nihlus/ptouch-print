@@ -25,11 +25,21 @@ struct _pt_tape_info {
 	uint8_t px;		/* Printing area in px */
 };
 
-#define FLAG_NONE		(0x00)
-#define FLAG_UNSUP_RASTER	(0x01)
-#define FLAG_RASTER_PACKBITS	(0x02)
-#define FLAG_PLITE		(0x04)
-#define FLAG_P700_INIT		(0x08)
+#define FLAG_NONE		(0)
+#define FLAG_UNSUP_RASTER	(1 << 0)
+#define FLAG_RASTER_PACKBITS	(1 << 1)
+#define FLAG_PLITE		(1 << 2)
+#define FLAG_P700_INIT		(1 << 3)
+
+typedef enum _pt_page_flags{
+	FEED_NONE	= 0x0,
+	FEED_SMALL	= 0x08,
+	FEED_MEDIUM	= 0x0C,
+	FEED_LARGE	= 0x1A,
+	AUTO_CUT	= (1 << 6),
+	MIRROR		= (1 << 7),
+
+} pt_page_flags;
 
 struct _pt_dev_info {
 	int vid;		/* USB vendor ID */
@@ -83,6 +93,7 @@ int ptouch_send(ptouch_dev ptdev, uint8_t *data, size_t len);
 int ptouch_init(ptouch_dev ptdev);
 int ptouch_lf(ptouch_dev ptdev);
 int ptouch_ff(ptouch_dev ptdev);
+int ptouch_page_flags(ptouch_dev ptdev, uint8_t page_flags);
 int ptouch_eject(ptouch_dev ptdev);
 int ptouch_getstatus(ptouch_dev ptdev);
 int ptouch_getmaxwidth(ptouch_dev ptdev);
