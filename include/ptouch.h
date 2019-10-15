@@ -22,7 +22,7 @@
 
 struct _pt_tape_info {
 	uint8_t mm;		/* Tape width in mm */
-	uint8_t px;		/* Printing area in px */
+	double margins;		/* Default margins in mm */
 };
 
 #define FLAG_NONE		(0)
@@ -45,7 +45,8 @@ struct _pt_dev_info {
 	int vid;		/* USB vendor ID */
 	int pid;		/* USB product ID */
 	char *name;
-	int max_px;		/* Maximum pixel width that can be printed */
+	int dpi;		/* Maximum DPI that can be printed */
+	int bytes_per_line;
 	int flags;
 };
 typedef struct _pt_dev_info *pt_dev_info;
@@ -83,7 +84,7 @@ struct _ptouch_dev {
 	libusb_device_handle *h;
 	pt_dev_info devinfo;
 	pt_dev_stat status;
-	uint8_t tape_width_px;
+	uint16_t tape_width_px;
 };
 typedef struct _ptouch_dev *ptouch_dev;
 
