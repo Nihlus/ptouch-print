@@ -17,6 +17,12 @@
 	Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef USING_CMAKE
+#include "config.h"
+#else
+#include <locale.h>
+#endif
+
 #include <stdio.h>	/* printf() */
 #include <stdlib.h>	/* exit(), malloc() */
 #include <stdbool.h>
@@ -25,8 +31,6 @@
 #include <sys/stat.h>	/* open() */
 #include <fcntl.h>	/* open() */
 #include <gd.h>
-#include <locale.h>
-#include "config.h"
 #include "gettext.h"	/* gettext(), ngettext() */
 #include "ptouch.h"
 
