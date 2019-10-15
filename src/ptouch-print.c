@@ -494,6 +494,10 @@ int main(int argc, char *argv[])
 			exit(0);
 		} else if (strcmp(&argv[i][1], "-image") == 0) {
 			im=image_load(argv[++i]);
+			if (im == NULL) {
+				printf(_("failed to load image file\n"));
+				return 1;
+			}
 			out=img_append(out, im);
 			gdImageDestroy(im);
 			im = NULL;
