@@ -84,7 +84,7 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		printf(_("maximum printing width for this tape is %ipx\n"), tape_width);
 		return -1;
 	}
-	offset=64-(gdImageSY(im)/2);	/* always print centered  */
+	offset=(tape_width / 2)-(gdImageSY(im)/2) + 64;	/* always print centered  */
 	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
 		if (debug) {
 			printf("enable PackBits mode\n");
