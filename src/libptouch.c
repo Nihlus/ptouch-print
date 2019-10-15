@@ -63,7 +63,7 @@ struct _pt_dev_info ptdevs[] = {
 	{0x04f9, 0x2073, "PT-D450", 180, 16, FLAG_RASTER_PACKBITS},
 	{0x04f9, 0x200d, "PT-3600", 360, 48, FLAG_RASTER_PACKBITS},
 	/* Notes about the PT-D450: I'm unsure if print width really is 128px */
-	{0,0,"",0,0}
+	{0, 0, "", 0, 0, 0}
 };
 
 void ptouch_rawstatus(uint8_t raw[32]);
