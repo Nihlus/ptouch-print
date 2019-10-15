@@ -305,7 +305,12 @@ int ptouch_getstatus(ptouch_dev ptdev)
 	return -1;
 }
 
-int ptouch_getmaxwidth(ptouch_dev ptdev)
+size_t ptouch_get_max_pixel_width(ptouch_dev ptdev)
+{
+	return ptdev->devinfo->bytes_per_line * 8;
+}
+
+int ptouch_get_tape_pixel_width(ptouch_dev ptdev)
 {
 	return ptdev->tape_width_px;
 }

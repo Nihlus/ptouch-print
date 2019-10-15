@@ -82,7 +82,7 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		printf(_("nothing to print\n"));
 		return -1;
 	}
-	tape_width=ptouch_getmaxwidth(ptdev);
+	tape_width=ptouch_get_tape_pixel_width(ptdev);
 	/* find out whether color 0 or color 1 is darker */
 	d=(gdImageRed(im,1)+gdImageGreen(im,1)+gdImageBlue(im,1) < gdImageRed(im,0)+gdImageGreen(im,0)+gdImageBlue(im,0))?1:0;
 	if (gdImageSY(im) > tape_width) {
@@ -90,7 +90,8 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		printf(_("maximum printing width for this tape is %ipx\n"), tape_width);
 		return -1;
 	}
-	offset=(tape_width / 2)-(gdImageSY(im)/2) + 64;	/* always print centered  */
+	size_t max_pixels=ptouch_get_max_pixel_width(ptdev);
+	offset=((int)max_pixels / 2)-(gdImageSY(im)/2);	/* always print centered  */
 	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
 		if (debug) {
 			printf("enable PackBits mode\n");
@@ -469,7 +470,7 @@ int main(int argc, char *argv[])
 		printf(_("ptouch_getstatus() failed\n"));
 		return 1;
 	}
-	tape_width=ptouch_getmaxwidth(ptdev);
+	tape_width=ptouch_get_tape_pixel_width(ptdev);
 	for (i=1; i<argc; i++) {
 		if (*argv[i] != '-') {
 			break;
