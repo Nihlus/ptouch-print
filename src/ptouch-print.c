@@ -34,7 +34,7 @@
 #define MAX_LINES 4	/* maybe this should depend on tape size */
 
 gdImage *image_load(const char *file);
-void rasterline_setpixel(uint8_t rasterline[16], int pixel);
+void rasterline_setpixel(uint8_t* rasterline, size_t size, int pixel);
 int get_baselineoffset(char *text, char *font, int fsz);
 int find_fontsize(int want_px, char *font, char *text);
 int needed_width(char *text, char *font, int fsz);
@@ -58,19 +58,20 @@ bool debug=false;
 /* --------------------------------------------------------------------
    -------------------------------------------------------------------- */
 
-void rasterline_setpixel(uint8_t rasterline[16], int pixel)
+void rasterline_setpixel(uint8_t* rasterline, size_t size, int pixel)
 {
-	if (pixel > 128) {
+	if (pixel > 384) {
 		return;
 	}
-	rasterline[15-(pixel/8)] |= (uint8_t)(1<<(pixel%8));
+
+	rasterline[(size - 1)-(pixel/8)] |= (uint8_t)(1<<(pixel%8));
 	return;
 }
 
 int print_img(ptouch_dev ptdev, gdImage *im)
 {
 	int d,i,k,offset,tape_width;
-	uint8_t rasterline[16];
+	uint8_t rasterline[ptdev->devinfo->bytes_per_line];
 
 	if (!im) {
 		printf(_("nothing to print\n"));
@@ -100,10 +101,10 @@ int print_img(ptouch_dev ptdev, gdImage *im)
 		memset(rasterline, 0, sizeof(rasterline));
 		for (i=0; i<gdImageSY(im); i+=1) {
 			if (gdImageGetPixel(im, k, gdImageSY(im)-1-i) == d) {
-				rasterline_setpixel(rasterline, offset+i);
+				rasterline_setpixel(rasterline, sizeof(rasterline), offset+i);
 			}
 		}
-		if (ptouch_sendraster(ptdev, rasterline, 16) != 0) {
+		if (ptouch_sendraster(ptdev, rasterline, sizeof(rasterline)) != 0) {
 			printf(_("ptouch_sendraster() failed\n"));
 			return -1;
 		}
