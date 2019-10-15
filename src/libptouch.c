@@ -207,6 +207,20 @@ int ptouch_ff(ptouch_dev ptdev)
 	return ptouch_send(ptdev, (uint8_t *)cmd, strlen(cmd));
 }
 
+/* set page flags */
+int ptouch_page_flags(ptouch_dev ptdev, uint8_t page_flags)
+{
+	uint8_t cmd[4];
+	memset(cmd, 0, sizeof(cmd));
+
+	cmd[0] = 0x1b;
+	cmd[1] = 0x69;
+	cmd[2] = 0x4d;
+	cmd[3] = page_flags;
+
+	return ptouch_send(ptdev, cmd, sizeof(cmd));
+}
+
 /* print and cut tape */
 int ptouch_eject(ptouch_dev ptdev)
 {
